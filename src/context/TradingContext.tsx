@@ -9,6 +9,7 @@ import binanceApi, {
   TickerPrice, 
   TradeHistory 
 } from '@/services/binanceApi';
+import { API_CONFIG } from '@/services/api/config';
 
 interface TradingContextType {
   isLoading: boolean;
@@ -18,8 +19,6 @@ interface TradingContextType {
   openOrders: Order[] | null;
   selectedAsset: string | null;
   tradeHistory: Map<string, TradeHistory[]>;
-  authenticate: (apiKey: string, apiSecret: string) => Promise<boolean>;
-  logout: () => void;
   refreshData: () => Promise<void>;
   selectAsset: (asset: string) => void;
   createOrder: (order: OrderRequest) => Promise<Order | null>;
@@ -41,18 +40,30 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [tradeHistory, setTradeHistory] = useState<Map<string, TradeHistory[]>>(new Map());
   
-  // Check if user is already authenticated
+  // Check if API credentials are available
   useEffect(() => {
     const checkAuth = async () => {
       if (binanceApi.hasCredentials()) {
         setIsLoading(true);
-        const isConnected = await binanceApi.testConnection();
-        setIsAuthenticated(isConnected);
-        
-        if (isConnected) {
-          await refreshData();
+        try {
+          const isConnected = await binanceApi.testConnection();
+          setIsAuthenticated(isConnected);
+          
+          if (isConnected) {
+            await refreshData();
+            toast.success('Successfully connected to Binance API');
+          } else {
+            toast.error('Could not connect to Binance API. Please check your API keys.');
+          }
+        } catch (error) {
+          console.error('Authentication error:', error);
+          toast.error('Failed to connect to Binance API');
+          setIsAuthenticated(false);
+        } finally {
+          setIsLoading(false);
         }
-        setIsLoading(false);
+      } else {
+        toast.error('No API credentials found. Please set VITE_BINANCE_API_KEY and VITE_BINANCE_API_SECRET in your .env file.');
       }
     };
     
@@ -69,38 +80,6 @@ export function TradingProvider({ children }: { children: ReactNode }) {
       return () => clearInterval(intervalId);
     }
   }, [isAuthenticated]);
-  
-  const authenticate = async (apiKey: string, apiSecret: string) => {
-    setIsLoading(true);
-    try {
-      const isConnected = await binanceApi.setCredentials(apiKey, apiSecret);
-      setIsAuthenticated(isConnected);
-      
-      if (isConnected) {
-        await refreshData();
-        toast.success('Successfully connected to Binance');
-      }
-      
-      return isConnected;
-    } catch (error) {
-      console.error('Authentication error:', error);
-      toast.error('Failed to authenticate with Binance');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const logout = () => {
-    binanceApi.clearCredentials();
-    setIsAuthenticated(false);
-    setAccountInfo(null);
-    setAssetPrices(new Map());
-    setOpenOrders(null);
-    setSelectedAsset(null);
-    setTradeHistory(new Map());
-    toast.info('Logged out from Binance');
-  };
   
   const refreshData = async () => {
     setIsLoading(true);
@@ -230,8 +209,6 @@ export function TradingProvider({ children }: { children: ReactNode }) {
     openOrders,
     selectedAsset,
     tradeHistory,
-    authenticate,
-    logout,
     refreshData,
     selectAsset,
     createOrder,

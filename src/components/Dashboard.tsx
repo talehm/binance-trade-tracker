@@ -6,10 +6,10 @@ import PriceChart from '@/components/PriceChart';
 import TradeHistory from '@/components/TradeHistory';
 import CreateOrderForm from '@/components/CreateOrderForm';
 import { Button } from '@/components/ui/button';
-import { Settings, History, Wallet, TrendingUp, RefreshCcw } from 'lucide-react';
+import { History, Wallet, TrendingUp, RefreshCcw } from 'lucide-react';
 
 const Dashboard = () => {
-  const { logout, refreshData, selectedAsset, isLoading } = useTrading();
+  const { refreshData, selectedAsset, isLoading } = useTrading();
   
   const handleRefresh = () => {
     refreshData();
@@ -26,7 +26,6 @@ const Dashboard = () => {
             <RefreshCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
-          <Button variant="secondary" onClick={logout}>Logout</Button>
         </div>
       </div>
       
