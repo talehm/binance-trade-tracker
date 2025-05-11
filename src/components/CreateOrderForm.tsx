@@ -90,12 +90,12 @@ const CreateOrderForm = () => {
       }
     }
     
-    // Fix the TypeScript error by explicitly typing the side property as "BUY" | "SELL"
+    // Fix both TypeScript errors by explicitly typing the side and timeInForce properties
     const order = {
       symbol,
       side: selectedTab === 'buy' ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
       type: orderType as any,
-      timeInForce: 'GTC',
+      timeInForce: 'GTC' as 'GTC' | 'IOC' | 'FOK',
       quantity: numQuantity,
       price: numPrice
     };
