@@ -76,14 +76,6 @@ export interface OrderRequest {
   icebergQty?: number;
 }
 
-// Mock data for development
-const MOCK_DATA = {
-  prices: {
-    ADAEUR: { symbol: "ADAEUR", price: "0.40" },
-    BTCEUR: { symbol: "BTCEUR", price: "62000.00" }
-  }
-};
-
 class BinanceApi {
   private apiKey: string | null = null;
   private apiSecret: string | null = null;
@@ -91,7 +83,7 @@ class BinanceApi {
   private apiKeyHeader = 'x-api-key'; // Backend API key header
   private frontendApiKey = import.meta.env.VITE_API_KEY || 'development-api-key'; // Frontend API key
   private supportedPairs = ['ADAEUR', 'BTCEUR']; // Only support these pairs
-  private isDevMode = false //import.meta.env.DEV; // Check if we're in development mode
+  private isDevMode = import.meta.env.DEV; // Check if we're in development mode
   
   constructor() {
     // Load API key and secret from localStorage if available
@@ -146,12 +138,6 @@ class BinanceApi {
         throw new Error('API key and secret are required');
       }
       
-      // In development mode, just return true
-      if (this.isDevMode) {
-        console.log('DEV MODE: Bypassing API connection test');
-        return true;
-      }
-      
       const response = await fetch(`${this.backendUrl}/api/v3/ping`, {
         headers: this.getHeaders()
       });
@@ -164,7 +150,7 @@ class BinanceApi {
     } catch (error) {
       console.error('Connection test failed:', error);
       toast.error('Failed to connect to Binance API');
-      return this.isDevMode; // Return true in dev mode even if connection fails
+      return false;
     }
   }
   
@@ -173,28 +159,6 @@ class BinanceApi {
     try {
       if (!this.hasCredentials()) {
         throw new Error('API credentials required');
-      }
-      
-      // In development mode, return mock data
-      if (this.isDevMode) {
-        console.log('DEV MODE: Returning mock account data');
-        return {
-          makerCommission: 10,
-          takerCommission: 10,
-          buyerCommission: 0,
-          sellerCommission: 0,
-          canTrade: true,
-          canWithdraw: true,
-          canDeposit: true,
-          updateTime: Date.now(),
-          accountType: 'SPOT',
-          balances: [
-            { asset: 'BTC', free: '0.5', locked: '0', freeze: '0', withdrawing: '0', ipoable: '0', btcValuation: '0.5' },
-            { asset: 'ADA', free: '1000', locked: '0', freeze: '0', withdrawing: '0', ipoable: '0', btcValuation: '0.002' },
-            { asset: 'EUR', free: '10000', locked: '0', freeze: '0', withdrawing: '0', ipoable: '0', btcValuation: '0' }
-          ],
-          permissions: ['SPOT']
-        };
       }
       
       const response = await fetch(`${this.backendUrl}/api/v3/account`, {
@@ -209,28 +173,6 @@ class BinanceApi {
     } catch (error) {
       console.error('Failed to fetch account info:', error);
       toast.error('Failed to load account information');
-      
-      // Return mock data in case of error if in dev mode
-      if (this.isDevMode) {
-        return {
-          makerCommission: 10,
-          takerCommission: 10,
-          buyerCommission: 0,
-          sellerCommission: 0,
-          canTrade: true,
-          canWithdraw: true,
-          canDeposit: true,
-          updateTime: Date.now(),
-          accountType: 'SPOT',
-          balances: [
-            { asset: 'BTC', free: '0.5', locked: '0', freeze: '0', withdrawing: '0', ipoable: '0', btcValuation: '0.5' },
-            { asset: 'ADA', free: '1000', locked: '0', freeze: '0', withdrawing: '0', ipoable: '0', btcValuation: '0.002' },
-            { asset: 'EUR', free: '10000', locked: '0', freeze: '0', withdrawing: '0', ipoable: '0', btcValuation: '0' }
-          ],
-          permissions: ['SPOT']
-        };
-      }
-      
       return null;
     }
   }
@@ -240,12 +182,6 @@ class BinanceApi {
     try {
       if (!this.supportedPairs.includes(symbol)) {
         throw new Error(`Symbol ${symbol} is not supported. Only ${this.supportedPairs.join(', ')} are supported.`);
-      }
-      
-      // In development mode, return mock data
-      if (this.isDevMode) {
-        console.log(`DEV MODE: Returning mock price for ${symbol}`);
-        return MOCK_DATA.prices[symbol as keyof typeof MOCK_DATA.prices];
       }
       
       const response = await fetch(`${this.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {
@@ -259,12 +195,6 @@ class BinanceApi {
       return await response.json();
     } catch (error) {
       console.error(`Failed to fetch price for ${symbol}:`, error);
-      
-      // Return mock data in case of error if in dev mode
-      if (this.isDevMode) {
-        return MOCK_DATA.prices[symbol as keyof typeof MOCK_DATA.prices];
-      }
-      
       toast.error(`Failed to load price for ${symbol}`);
       return null;
     }
@@ -273,29 +203,20 @@ class BinanceApi {
   // Get all ticker prices for supported pairs
   async getAllTickerPrices(): Promise<TickerPrice[] | null> {
     try {
-      // In development mode, return all mock prices
-      if (this.isDevMode) {
-        console.log('DEV MODE: Returning mock prices for all supported pairs');
-        return this.supportedPairs.map(symbol => MOCK_DATA.prices[symbol as keyof typeof MOCK_DATA.prices]);
-      }
-      
-      const results: TickerPrice[] = [];
-      
-        try {
-          const response = await fetch(`${this.backendUrl}/api/v3/ticker/price?symbols=${encodeURIComponent(JSON.stringify(this.supportedPairs))}`, {
-            headers: this.getHeaders()
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            results.push(data);
-          } else {
-            console.warn(`Failed to fetch prices: ${response.status} ${response.statusText}`);
+      // Create separate requests for each symbol
+      const promises = this.supportedPairs.map(symbol =>
+        fetch(`${this.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {
+          headers: this.getHeaders()
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`API error for ${symbol}: ${response.statusText}`);
           }
-        } catch (e) {
-          console.error(`Error fetching prices:`, e);
-        }
+          return response.json();
+        })
+      );
       
+      const results = await Promise.all(promises);
       
       if (results.length === 0) {
         throw new Error('Failed to fetch any price information');
@@ -304,12 +225,6 @@ class BinanceApi {
       return results;
     } catch (error) {
       console.error('Failed to fetch prices:', error);
-      
-      // Return mock data in case of error if in dev mode
-      if (this.isDevMode) {
-        return this.supportedPairs.map(symbol => MOCK_DATA.prices[symbol as keyof typeof MOCK_DATA.prices]);
-      }
-      
       toast.error('Failed to load price information');
       return null;
     }
@@ -320,12 +235,6 @@ class BinanceApi {
     try {
       if (!this.hasCredentials()) {
         throw new Error('API credentials required');
-      }
-      
-      // In development mode, return mock data
-      if (this.isDevMode) {
-        console.log('DEV MODE: Returning mock open orders');
-        return [];
       }
       
       const response = await fetch(`${this.backendUrl}/api/v3/openOrders`, {
@@ -344,12 +253,6 @@ class BinanceApi {
       );
     } catch (error) {
       console.error('Failed to fetch open orders:', error);
-      
-      // Return mock data in case of error if in dev mode
-      if (this.isDevMode) {
-        return [];
-      }
-      
       toast.error('Failed to load open orders');
       return null;
     }
@@ -364,32 +267,6 @@ class BinanceApi {
       
       if (!this.supportedPairs.includes(order.symbol)) {
         throw new Error(`Symbol ${order.symbol} is not supported. Only ${this.supportedPairs.join(', ')} are supported.`);
-      }
-      
-      // In development mode, return mock data
-      if (this.isDevMode) {
-        console.log('DEV MODE: Creating mock order', order);
-        toast.success(`Created mock ${order.side} order for ${order.quantity} ${order.symbol} at ${order.price || 'market price'}`);
-        return {
-          symbol: order.symbol,
-          orderId: Math.floor(Math.random() * 1000000),
-          orderListId: -1,
-          clientOrderId: 'mock-order-' + Date.now(),
-          price: order.price ? order.price.toString() : '0',
-          origQty: order.quantity.toString(),
-          executedQty: '0',
-          cummulativeQuoteQty: '0',
-          status: 'NEW',
-          timeInForce: order.timeInForce || 'GTC',
-          type: order.type,
-          side: order.side,
-          stopPrice: '0',
-          icebergQty: '0',
-          time: Date.now(),
-          updateTime: Date.now(),
-          isWorking: true,
-          origQuoteOrderQty: '0'
-        };
       }
       
       const response = await fetch(`${this.backendUrl}/api/v3/order`, {
@@ -422,35 +299,6 @@ class BinanceApi {
         throw new Error(`Symbol ${symbol} is not supported. Only ${this.supportedPairs.join(', ')} are supported.`);
       }
       
-      // In development mode, return mock data
-      if (this.isDevMode) {
-        console.log(`DEV MODE: Returning mock trade history for ${symbol}`);
-        return [
-          {
-            id: 1,
-            symbol,
-            price: symbol === 'ADAEUR' ? '0.38' : '61500.00',
-            qty: symbol === 'ADAEUR' ? '500' : '0.05',
-            quoteQty: symbol === 'ADAEUR' ? '190' : '3075',
-            time: Date.now() - 3600000,
-            isBuyer: true,
-            isMaker: false,
-            isBestMatch: true
-          },
-          {
-            id: 2,
-            symbol,
-            price: symbol === 'ADAEUR' ? '0.41' : '62300.00',
-            qty: symbol === 'ADAEUR' ? '300' : '0.03',
-            quoteQty: symbol === 'ADAEUR' ? '123' : '1869',
-            time: Date.now() - 7200000,
-            isBuyer: false,
-            isMaker: true,
-            isBestMatch: true
-          }
-        ];
-      }
-      
       const response = await fetch(`${this.backendUrl}/api/v3/myTrades?symbol=${symbol}`, {
         headers: this.getHeaders()
       });
@@ -462,35 +310,6 @@ class BinanceApi {
       return await response.json();
     } catch (error) {
       console.error(`Failed to fetch trade history for ${symbol}:`, error);
-      
-      // Return mock data in case of error if in dev mode
-      if (this.isDevMode) {
-        return [
-          {
-            id: 1,
-            symbol,
-            price: symbol === 'ADAEUR' ? '0.38' : '61500.00',
-            qty: symbol === 'ADAEUR' ? '500' : '0.05',
-            quoteQty: symbol === 'ADAEUR' ? '190' : '3075',
-            time: Date.now() - 3600000,
-            isBuyer: true,
-            isMaker: false,
-            isBestMatch: true
-          },
-          {
-            id: 2,
-            symbol,
-            price: symbol === 'ADAEUR' ? '0.41' : '62300.00',
-            qty: symbol === 'ADAEUR' ? '300' : '0.03',
-            quoteQty: symbol === 'ADAEUR' ? '123' : '1869',
-            time: Date.now() - 7200000,
-            isBuyer: false,
-            isMaker: true,
-            isBestMatch: true
-          }
-        ];
-      }
-      
       toast.error(`Failed to load trade history for ${symbol}`);
       return null;
     }
