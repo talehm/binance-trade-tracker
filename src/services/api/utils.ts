@@ -1,22 +1,35 @@
-
 import { toast } from "@/components/ui/sonner";
 import { API_CONFIG, STORAGE_KEYS } from "./config";
 
 // Helper functions for the Binance API
 
 /**
- * Load credentials from localStorage
+ * Load credentials from environment variables first, then localStorage
  */
 export function loadCredentials(): { apiKey: string | null; apiSecret: string | null } {
+  // First check environment variables
+  const envApiKey = API_CONFIG.binanceApiKey;
+  const envApiSecret = API_CONFIG.binanceApiSecret;
+  
+  if (envApiKey && envApiSecret) {
+    return { apiKey: envApiKey, apiSecret: envApiSecret };
+  }
+  
+  // Fall back to localStorage if env vars are not available
   const apiKey = localStorage.getItem(STORAGE_KEYS.apiKey);
   const apiSecret = localStorage.getItem(STORAGE_KEYS.apiSecret);
   return { apiKey, apiSecret };
 }
 
 /**
- * Save credentials to localStorage
+ * Save credentials to localStorage (only used as fallback when env vars not available)
  */
 export function saveCredentials(apiKey: string, apiSecret: string): void {
+  // If env vars are available, no need to save to localStorage
+  if (API_CONFIG.binanceApiKey && API_CONFIG.binanceApiSecret) {
+    return;
+  }
+  
   localStorage.setItem(STORAGE_KEYS.apiKey, apiKey);
   localStorage.setItem(STORAGE_KEYS.apiSecret, apiSecret);
 }
