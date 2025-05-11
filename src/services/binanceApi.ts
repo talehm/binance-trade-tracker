@@ -290,10 +290,10 @@ class BinanceApi {
             const data = await response.json();
             results.push(data);
           } else {
-            console.warn(`Failed to fetch price for ${pair}: ${response.status} ${response.statusText}`);
+            console.warn(`Failed to fetch prices: ${response.status} ${response.statusText}`);
           }
         } catch (e) {
-          console.error(`Error fetching price for ${pair}:`, e);
+          console.error(`Error fetching prices:`, e);
         }
       
       
