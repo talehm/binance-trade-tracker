@@ -4,14 +4,6 @@ import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError, validateSymbol } from "./utils";
 
 export class MarketService {
-  private apiKey: string | null;
-  private apiSecret: string | null;
-  
-  constructor(apiKey: string | null, apiSecret: string | null) {
-    this.apiKey = apiKey;
-    this.apiSecret = apiSecret;
-  }
-  
   /**
    * Get ticker price for a symbol
    */
@@ -22,7 +14,7 @@ export class MarketService {
       }
       
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {
-        headers: buildHeaders(this.apiKey, this.apiSecret)
+        headers: buildHeaders()
       });
       
       if (!response.ok) {
@@ -43,7 +35,7 @@ export class MarketService {
       // Create separate requests for each symbol
       const promises = API_CONFIG.supportedPairs.map(symbol =>
         fetch(`${API_CONFIG.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {
-          headers: buildHeaders(this.apiKey, this.apiSecret)
+          headers: buildHeaders()
         })
         .then(response => {
           if (!response.ok) {

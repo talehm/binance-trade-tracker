@@ -21,14 +21,15 @@ class BinanceApi {
   private tradeService: TradeService;
   
   constructor() {
-    // Initialize services with API keys from environment variables
-    this.accountService = new AccountService(API_CONFIG.binanceApiKey, API_CONFIG.binanceApiSecret);
-    this.marketService = new MarketService(API_CONFIG.binanceApiKey, API_CONFIG.binanceApiSecret);
-    this.tradeService = new TradeService(API_CONFIG.binanceApiKey, API_CONFIG.binanceApiSecret);
+    // Initialize services without API keys since they're now handled by the backend
+    this.accountService = new AccountService();
+    this.marketService = new MarketService();
+    this.tradeService = new TradeService();
   }
   
   hasCredentials(): boolean {
-    return !!(API_CONFIG.binanceApiKey && API_CONFIG.binanceApiSecret);
+    // Check if backend URL is available
+    return API_CONFIG.backendUrl !== '';
   }
 
   // Proxy methods to the services

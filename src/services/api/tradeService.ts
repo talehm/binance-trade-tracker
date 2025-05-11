@@ -4,25 +4,13 @@ import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError, validateSymbol } from "./utils";
 
 export class TradeService {
-  private apiKey: string | null;
-  private apiSecret: string | null;
-  
-  constructor(apiKey: string | null, apiSecret: string | null) {
-    this.apiKey = apiKey;
-    this.apiSecret = apiSecret;
-  }
-  
   /**
    * Get open orders
    */
   async getOpenOrders(): Promise<Order[] | null> {
     try {
-      if (!this.apiKey || !this.apiSecret) {
-        throw new Error('API credentials required');
-      }
-      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/openOrders`, {
-        headers: buildHeaders(this.apiKey, this.apiSecret)
+        headers: buildHeaders()
       });
       
       if (!response.ok) {
@@ -45,17 +33,13 @@ export class TradeService {
    */
   async createOrder(order: OrderRequest): Promise<Order | null> {
     try {
-      if (!this.apiKey || !this.apiSecret) {
-        throw new Error('API credentials required');
-      }
-      
       if (!validateSymbol(order.symbol)) {
         return null;
       }
       
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/order`, {
         method: 'POST',
-        headers: buildHeaders(this.apiKey, this.apiSecret),
+        headers: buildHeaders(),
         body: JSON.stringify(order)
       });
       
@@ -75,16 +59,12 @@ export class TradeService {
    */
   async getTradeHistory(symbol: string): Promise<TradeHistory[] | null> {
     try {
-      if (!this.apiKey || !this.apiSecret) {
-        throw new Error('API credentials required');
-      }
-      
       if (!validateSymbol(symbol)) {
         return null;
       }
       
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/myTrades?symbol=${symbol}`, {
-        headers: buildHeaders(this.apiKey, this.apiSecret)
+        headers: buildHeaders()
       });
       
       if (!response.ok) {

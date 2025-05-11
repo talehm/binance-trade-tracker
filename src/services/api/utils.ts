@@ -7,21 +7,11 @@ import { API_CONFIG } from "./config";
 /**
  * Build headers for API requests
  */
-export function buildHeaders(apiKey: string | null, apiSecret: string | null): Record<string, string> {
-  const headers: Record<string, string> = {
+export function buildHeaders(): Record<string, string> {
+  return {
     'Content-Type': 'application/json',
     [API_CONFIG.apiKeyHeader]: API_CONFIG.frontendApiKey
   };
-  
-  if (apiKey) {
-    headers['binance-api-key'] = apiKey;
-  }
-  
-  if (apiSecret) {
-    headers['binance-api-secret'] = apiSecret;
-  }
-  
-  return headers;
 }
 
 /**

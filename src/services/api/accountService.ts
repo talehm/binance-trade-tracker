@@ -4,25 +4,13 @@ import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError } from "./utils";
 
 export class AccountService {
-  private apiKey: string | null;
-  private apiSecret: string | null;
-  
-  constructor(apiKey: string | null, apiSecret: string | null) {
-    this.apiKey = apiKey;
-    this.apiSecret = apiSecret;
-  }
-  
   /**
-   * Test connectivity to the API and validate API key
+   * Test connectivity to the API
    */
   async testConnection(): Promise<boolean> {
     try {
-      if (!this.apiKey || !this.apiSecret) {
-        throw new Error('API key and secret are required');
-      }
-      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/ping`, {
-        headers: buildHeaders(this.apiKey, this.apiSecret)
+        headers: buildHeaders()
       });
       
       if (!response.ok) {
@@ -40,12 +28,8 @@ export class AccountService {
    */
   async getAccountInfo(): Promise<AccountInfo | null> {
     try {
-      if (!this.apiKey || !this.apiSecret) {
-        throw new Error('API credentials required');
-      }
-      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/account`, {
-        headers: buildHeaders(this.apiKey, this.apiSecret)
+        headers: buildHeaders()
       });
       
       if (!response.ok) {
