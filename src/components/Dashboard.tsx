@@ -6,7 +6,7 @@ import PriceChart from '@/components/PriceChart';
 import TradeHistory from '@/components/TradeHistory';
 import CreateOrderForm from '@/components/CreateOrderForm';
 import { Button } from '@/components/ui/button';
-import { Settings, History, Wallet, TrendingUp } from 'lucide-react';
+import { Settings, History, Wallet, TrendingUp, RefreshCcw } from 'lucide-react';
 
 const Dashboard = () => {
   const { logout, refreshData, selectedAsset, isLoading } = useTrading();
@@ -19,10 +19,11 @@ const Dashboard = () => {
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold flex items-center">
-          <Wallet className="mr-2 h-8 w-8 text-binance" /> Binance Trading Dashboard
+          <Wallet className="mr-2 h-8 w-8 text-primary" /> Binance Trading Dashboard
         </h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading} className="flex items-center">
+            <RefreshCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
           <Button variant="secondary" onClick={logout}>Logout</Button>
@@ -34,7 +35,7 @@ const Dashboard = () => {
       {selectedAsset && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <PriceChart symbol={`${selectedAsset}USDT`} />
+            <PriceChart symbol={`${selectedAsset}EUR`} />
           </div>
           <div>
             <CreateOrderForm />

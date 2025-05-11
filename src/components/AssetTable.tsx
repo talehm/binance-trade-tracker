@@ -18,7 +18,7 @@ const AssetTable = () => {
   );
   
   return (
-    <div className="crypto-card">
+    <div className="bg-card rounded-lg shadow p-4">
       <h2 className="text-xl font-semibold mb-4">Your Assets</h2>
       <div className="overflow-x-auto">
         <Table>

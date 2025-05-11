@@ -9,41 +9,60 @@ interface PriceChartProps {
 }
 
 const PriceChart = ({ symbol = 'BTCEUR' }: PriceChartProps) => {
-  const { assetPrices } = useTrading();
+  const { assetPrices, selectedAsset } = useTrading();
   const [priceData, setPriceData] = useState<any[]>([]);
   
+  const effectiveSymbol = selectedAsset ? `${selectedAsset}EUR` : symbol;
+  
+  // Generate some fake historical data for visualization
   useEffect(() => {
-    if (assetPrices.has(symbol)) {
-      const currentPrice = parseFloat(assetPrices.get(symbol) || '0');
-      // In a real app we'd fetch historical data here
-      // For now we'll just use the current price
-      setPriceData([{
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        price: currentPrice
-      }]);
+    if (assetPrices.has(effectiveSymbol)) {
+      const currentPrice = parseFloat(assetPrices.get(effectiveSymbol) || '0');
+      if (currentPrice > 0) {
+        // Generate some historical price points based on current price
+        const historicalData = [];
+        const now = new Date();
+        
+        for (let i = 24; i >= 0; i--) {
+          const time = new Date(now);
+          time.setHours(time.getHours() - i);
+          
+          // Create some random price movement
+          const randomFactor = 0.98 + Math.random() * 0.04; // Between 0.98 and 1.02
+          const price = currentPrice * (1 + (Math.sin(i / 4) * 0.03)) * randomFactor;
+          
+          historicalData.push({
+            time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            price: price
+          });
+        }
+        
+        setPriceData(historicalData);
+      }
     }
-  }, [symbol, assetPrices]);
+  }, [effectiveSymbol, assetPrices]);
   
-  const currentPrice = assetPrices.get(symbol) || '0';
+  const currentPrice = assetPrices.get(effectiveSymbol) || '0';
+  const currentPriceNum = parseFloat(currentPrice);
   
-  // For real app, we'd calculate price change based on historical data
-  // For now, we'll just show current price
-  const percentChange = 0;
-  const priceChange = 0;
+  // Calculate a simulated price change (this would be real in a production app)
+  const previousPrice = priceData.length > 1 ? priceData[0].price : currentPriceNum;
+  const priceChange = currentPriceNum - previousPrice;
+  const percentChange = previousPrice ? (priceChange / previousPrice) * 100 : 0;
   
   const isPositive = percentChange >= 0;
-  const colorClass = isPositive ? 'text-profit' : 'text-loss';
+  const colorClass = isPositive ? 'text-green-500' : 'text-red-500';
   const gradientColor = isPositive ? '#22c55e' : '#ef4444';
   
   return (
     <Card className="w-full">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle>{symbol}</CardTitle>
+          <CardTitle>{effectiveSymbol}</CardTitle>
           <div className="flex flex-col items-end">
-            <span className="text-xl font-bold">€{parseFloat(currentPrice).toFixed(2)}</span>
+            <span className="text-xl font-bold">€{currentPriceNum > 0 ? currentPriceNum.toFixed(currentPriceNum > 10 ? 2 : 4) : 'N/A'}</span>
             <span className={`text-sm ${colorClass}`}>
-              Live Price (Real-time)
+              {isPositive ? '+' : ''}{priceChange.toFixed(2)} ({percentChange.toFixed(2)}%)
             </span>
           </div>
         </div>
