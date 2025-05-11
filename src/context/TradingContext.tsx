@@ -42,10 +42,10 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   
   // Check if API credentials are available
   useEffect(() => {
-    const checkAuth = async () => {
-      if (binanceApi.hasCredentials()) {
-        setIsLoading(true);
-        try {
+    const checkConnection = async () => {
+      setIsLoading(true);
+      try {
+        if (binanceApi.hasCredentials()) {
           const isConnected = await binanceApi.testConnection();
           setIsAuthenticated(isConnected);
           
@@ -53,21 +53,21 @@ export function TradingProvider({ children }: { children: ReactNode }) {
             await refreshData();
             toast.success('Successfully connected to Binance API');
           } else {
-            toast.error('Could not connect to Binance API. Please check your API keys.');
+            toast.error('Could not connect to Binance API. Please check your API keys in the environment variables.');
           }
-        } catch (error) {
-          console.error('Authentication error:', error);
-          toast.error('Failed to connect to Binance API');
-          setIsAuthenticated(false);
-        } finally {
-          setIsLoading(false);
+        } else {
+          toast.error('No API credentials found. Please set VITE_BINANCE_API_KEY and VITE_BINANCE_API_SECRET in your .env file.');
         }
-      } else {
-        toast.error('No API credentials found. Please set VITE_BINANCE_API_KEY and VITE_BINANCE_API_SECRET in your .env file.');
+      } catch (error) {
+        console.error('Connection error:', error);
+        toast.error('Failed to connect to Binance API');
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    checkAuth();
+    checkConnection();
   }, []);
   
   // Set up price refresh interval
