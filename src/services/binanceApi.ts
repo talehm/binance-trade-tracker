@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/sonner";
 import { AccountService } from "./api/accountService";
 import { MarketService } from "./api/marketService";
@@ -96,7 +95,7 @@ class BinanceApi {
     return this.tradeService.getOpenOrders();
   }
   
-  createOrder(order: OrderRequest) {
+  createOrder(order: import("./api/types").OrderRequest) {
     return this.tradeService.createOrder(order);
   }
   
