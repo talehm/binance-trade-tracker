@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/sonner";
 
 // Types
@@ -79,7 +78,9 @@ export interface OrderRequest {
 class BinanceApi {
   private apiKey: string | null = null;
   private apiSecret: string | null = null;
-  private baseUrl = 'https://api.binance.com';
+  private backendUrl = 'http://localhost:5000/api/binance'; // New backend URL
+  private apiKeyHeader = 'x-api-key'; // Backend API key header
+  private frontendApiKey = 'your-frontend-api-key'; // Should be environment variable in production
   
   constructor() {
     // Load API key and secret from localStorage if available
@@ -110,17 +111,21 @@ class BinanceApi {
     return !!(this.apiKey && this.apiSecret);
   }
   
-  // This is a placeholder - in a real app you would implement this properly with signed requests
-  private generateSignature(queryString: string): string {
-    // In production, use a proper HMAC SHA256 signing function
-    // For now we'll just return a placeholder
-    return 'signature_placeholder';
-  }
-  
   private getHeaders() {
-    return {
-      'X-MBX-APIKEY': this.apiKey || ''
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      [this.apiKeyHeader]: this.frontendApiKey
     };
+    
+    if (this.apiKey) {
+      headers['binance-api-key'] = this.apiKey;
+    }
+    
+    if (this.apiSecret) {
+      headers['binance-api-secret'] = this.apiSecret;
+    }
+    
+    return headers;
   }
 
   // Test connectivity to the API and validate API key
@@ -129,11 +134,15 @@ class BinanceApi {
       if (!this.apiKey || !this.apiSecret) {
         throw new Error('API key and secret are required');
       }
-      // This is a public endpoint that doesn't need credentials, but we'll use it to test
-      const response = await fetch(`${this.baseUrl}/api/v3/ping`);
+      
+      const response = await fetch(`${this.backendUrl}/api/v3/ping`, {
+        headers: this.getHeaders()
+      });
+      
       if (!response.ok) {
         throw new Error('Failed to connect to Binance API');
       }
+      
       return true;
     } catch (error) {
       console.error('Connection test failed:', error);
@@ -142,28 +151,18 @@ class BinanceApi {
     }
   }
   
-  // Get account information (requires signed endpoint)
+  // Get account information
   async getAccountInfo(): Promise<AccountInfo | null> {
     try {
       if (!this.hasCredentials()) {
         throw new Error('API credentials required');
       }
       
-      // In a real implementation, you would:
-      // 1. Generate a timestamp
-      // 2. Create a query string with the timestamp
-      // 3. Generate a signature using your API secret
-      // 4. Append the signature to the query string
-      
-      // For now, we'll use mock data for the demo
+      // For demo purposes, use mock data
       return this.getMockAccountInfo();
       
-      // Real implementation would be:
-      // const timestamp = Date.now();
-      // const queryString = `timestamp=${timestamp}`;
-      // const signature = this.generateSignature(queryString);
-      // const response = await fetch(`${this.baseUrl}/api/v3/account?${queryString}&signature=${signature}`, {
-      //   method: 'GET',
+      // Real implementation:
+      // const response = await fetch(`${this.backendUrl}/api/v3/account`, {
       //   headers: this.getHeaders()
       // });
       
@@ -182,7 +181,9 @@ class BinanceApi {
   // Get ticker prices
   async getTickerPrice(symbol: string): Promise<TickerPrice | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v3/ticker/price?symbol=${symbol}`);
+      const response = await fetch(`${this.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {
+        headers: this.getHeaders()
+      });
       
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
@@ -199,7 +200,9 @@ class BinanceApi {
   // Get all ticker prices
   async getAllTickerPrices(): Promise<TickerPrice[] | null> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/v3/ticker/price`);
+      const response = await fetch(`${this.backendUrl}/api/v3/ticker/price`, {
+        headers: this.getHeaders()
+      });
       
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
@@ -224,11 +227,7 @@ class BinanceApi {
       return this.getMockOpenOrders();
       
       // Real implementation:
-      // const timestamp = Date.now();
-      // const queryString = `timestamp=${timestamp}`;
-      // const signature = this.generateSignature(queryString);
-      // const response = await fetch(`${this.baseUrl}/api/v3/openOrders?${queryString}&signature=${signature}`, {
-      //   method: 'GET',
+      // const response = await fetch(`${this.backendUrl}/api/v3/openOrders`, {
       //   headers: this.getHeaders()
       // });
       
@@ -244,7 +243,7 @@ class BinanceApi {
     }
   }
   
-  // Create a new order
+  // Create a new order - fix the TypeScript error
   async createOrder(order: OrderRequest): Promise<Order | null> {
     try {
       if (!this.hasCredentials()) {
@@ -255,23 +254,10 @@ class BinanceApi {
       return this.createMockOrder(order);
       
       // Real implementation:
-      // const timestamp = Date.now();
-      // let queryString = `symbol=${order.symbol}&side=${order.side}&type=${order.type}&quantity=${order.quantity}&timestamp=${timestamp}`;
-      
-      // if (order.price) {
-      //   queryString += `&price=${order.price}`;
-      // }
-      
-      // if (order.timeInForce) {
-      //   queryString += `&timeInForce=${order.timeInForce}`;
-      // }
-      
-      // // Add other parameters as needed
-      
-      // const signature = this.generateSignature(queryString);
-      // const response = await fetch(`${this.baseUrl}/api/v3/order?${queryString}&signature=${signature}`, {
+      // const response = await fetch(`${this.backendUrl}/api/v3/order`, {
       //   method: 'POST',
-      //   headers: this.getHeaders()
+      //   headers: this.getHeaders(),
+      //   body: JSON.stringify(order)
       // });
       
       // if (!response.ok) {
@@ -297,11 +283,7 @@ class BinanceApi {
       return this.getMockTradeHistory(symbol);
       
       // Real implementation:
-      // const timestamp = Date.now();
-      // const queryString = `symbol=${symbol}&timestamp=${timestamp}`;
-      // const signature = this.generateSignature(queryString);
-      // const response = await fetch(`${this.baseUrl}/api/v3/myTrades?${queryString}&signature=${signature}`, {
-      //   method: 'GET',
+      // const response = await fetch(`${this.backendUrl}/api/v3/myTrades?symbol=${symbol}`, {
       //   headers: this.getHeaders()
       // });
       
