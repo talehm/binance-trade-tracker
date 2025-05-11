@@ -91,7 +91,7 @@ class BinanceApi {
   private apiKeyHeader = 'x-api-key'; // Backend API key header
   private frontendApiKey = import.meta.env.VITE_API_KEY || 'development-api-key'; // Frontend API key
   private supportedPairs = ['ADAEUR', 'BTCEUR']; // Only support these pairs
-  private isDevMode = fasle //import.meta.env.DEV; // Check if we're in development mode
+  private isDevMode = false //import.meta.env.DEV; // Check if we're in development mode
   
   constructor() {
     // Load API key and secret from localStorage if available
