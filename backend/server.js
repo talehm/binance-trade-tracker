@@ -47,38 +47,27 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Binance API proxy with authentication
-app.use('/api/binance', authenticateApiKey, (req, res, next) => {
-  // Verify request has necessary Binance credentials
-  const binanceApiKey = req.headers['binance-api-key'];
-  const binanceApiSecret = req.headers['binance-api-secret'];
-  
-  if (!binanceApiKey || !binanceApiSecret) {
-    return res.status(400).json({ error: 'Missing Binance API credentials' });
-  }
-  
-  next();
-}, createProxyMiddleware({
+// Binance API proxy with authentication using env variables
+app.use('/api/binance', authenticateApiKey, createProxyMiddleware({
   target: 'https://api.binance.com',
   changeOrigin: true,
   pathRewrite: {
     '^/api/binance': '/'
   },
   onProxyReq: (proxyReq, req) => {
-    // Add Binance API key header
-    proxyReq.setHeader('X-MBX-APIKEY', req.headers['binance-api-key']);
+    // Add Binance API key header from environment variable
+    proxyReq.setHeader('X-MBX-APIKEY', process.env.BINANCE_API_KEY);
     
     // For endpoints requiring signatures
     if (req.method === 'POST' || req.url.includes('api/v3/account')) {
-      const binanceApiSecret = req.headers['binance-api-secret'];
       const timestamp = Date.now();
       
       // Add timestamp parameter
       let query = `timestamp=${timestamp}`;
       
-      // Calculate signature
+      // Calculate signature using environment variable
       const signature = crypto
-        .createHmac('sha256', binanceApiSecret)
+        .createHmac('sha256', process.env.BINANCE_API_SECRET)
         .update(query)
         .digest('hex');
       
