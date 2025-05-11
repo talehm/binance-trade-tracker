@@ -23,7 +23,7 @@ const CreateOrderForm = () => {
   // When selected asset changes, update price field with current price
   useEffect(() => {
     if (selectedAsset) {
-      const symbol = `${selectedAsset}USDT`;
+      const symbol = `${selectedAsset}EUR`;
       const currentPrice = assetPrices.get(symbol);
       
       if (currentPrice) {
@@ -69,15 +69,15 @@ const CreateOrderForm = () => {
       return;
     }
     
-    const symbol = `${selectedAsset}USDT`;
+    const symbol = `${selectedAsset}EUR`;
     
     // Check if user has enough balance for this order
     if (selectedTab === 'buy') {
       const totalCost = numQuantity * numPrice;
-      const usdtBalance = accountInfo?.balances.find(b => b.asset === 'USDT');
+      const eurBalance = accountInfo?.balances.find(b => b.asset === 'EUR');
       
-      if (usdtBalance && parseFloat(usdtBalance.free) < totalCost) {
-        toast.error(`Insufficient USDT balance. Need ${totalCost.toFixed(2)} USDT`);
+      if (eurBalance && parseFloat(eurBalance.free) < totalCost) {
+        toast.error(`Insufficient EUR balance. Need €${totalCost.toFixed(2)}`);
         return;
       }
     } else {
@@ -90,7 +90,6 @@ const CreateOrderForm = () => {
       }
     }
     
-    // Fix both TypeScript errors by explicitly typing the side and timeInForce properties
     const order = {
       symbol,
       side: selectedTab === 'buy' ? 'BUY' : 'SELL' as 'BUY' | 'SELL',
@@ -118,14 +117,14 @@ const CreateOrderForm = () => {
     );
   }
   
-  const currentPrice = assetPrices.get(`${selectedAsset}USDT`);
+  const currentPrice = assetPrices.get(`${selectedAsset}EUR`);
   
   return (
     <Card>
       <CardHeader>
         <CardTitle>Create Order</CardTitle>
         <CardDescription>
-          {selectedAsset}/USDT • Current Price: {currentPrice ? `$${parseFloat(currentPrice).toFixed(4)}` : 'Loading...'}
+          {selectedAsset}/EUR • Current Price: {currentPrice ? `€${parseFloat(currentPrice).toFixed(4)}` : 'Loading...'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -164,7 +163,7 @@ const CreateOrderForm = () => {
             
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="price">Price (USDT)</Label>
+                <Label htmlFor="price">Price (EUR)</Label>
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="use-percent"
@@ -205,7 +204,7 @@ const CreateOrderForm = () => {
                   min="0"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="Enter price in USDT"
+                  placeholder="Enter price in EUR"
                 />
               )}
             </div>

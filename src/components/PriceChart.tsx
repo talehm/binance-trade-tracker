@@ -4,48 +4,32 @@ import { useTrading } from '@/context/TradingContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Mock price data for chart visualization
-const generateMockPriceData = (symbol: string, currentPrice: number) => {
-  const data = [];
-  let price = currentPrice * 0.95; // Start 5% lower
-  
-  // Generate 24 hourly data points (for past 24 hours)
-  for (let i = 0; i < 24; i++) {
-    // Add some randomness to price
-    const change = (Math.random() - 0.5) * 0.02; // -1% to +1%
-    price = price * (1 + change);
-    
-    data.push({
-      time: new Date(Date.now() - ((23 - i) * 3600000)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      price: parseFloat(price.toFixed(2))
-    });
-  }
-  
-  return data;
-};
-
 interface PriceChartProps {
   symbol?: string;
 }
 
-const PriceChart = ({ symbol = 'BTCUSDT' }: PriceChartProps) => {
+const PriceChart = ({ symbol = 'BTCEUR' }: PriceChartProps) => {
   const { assetPrices } = useTrading();
   const [priceData, setPriceData] = useState<any[]>([]);
   
   useEffect(() => {
     if (assetPrices.has(symbol)) {
       const currentPrice = parseFloat(assetPrices.get(symbol) || '0');
-      setPriceData(generateMockPriceData(symbol, currentPrice));
+      // In a real app we'd fetch historical data here
+      // For now we'll just use the current price
+      setPriceData([{
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        price: currentPrice
+      }]);
     }
   }, [symbol, assetPrices]);
   
   const currentPrice = assetPrices.get(symbol) || '0';
   
-  // Calculate price change
-  const firstPrice = priceData.length > 0 ? priceData[0].price : parseFloat(currentPrice);
-  const lastPrice = parseFloat(currentPrice);
-  const priceChange = lastPrice - firstPrice;
-  const percentChange = (priceChange / firstPrice) * 100;
+  // For real app, we'd calculate price change based on historical data
+  // For now, we'll just show current price
+  const percentChange = 0;
+  const priceChange = 0;
   
   const isPositive = percentChange >= 0;
   const colorClass = isPositive ? 'text-profit' : 'text-loss';
@@ -57,15 +41,15 @@ const PriceChart = ({ symbol = 'BTCUSDT' }: PriceChartProps) => {
         <div className="flex justify-between items-center">
           <CardTitle>{symbol}</CardTitle>
           <div className="flex flex-col items-end">
-            <span className="text-xl font-bold">${parseFloat(currentPrice).toFixed(2)}</span>
+            <span className="text-xl font-bold">€{parseFloat(currentPrice).toFixed(2)}</span>
             <span className={`text-sm ${colorClass}`}>
-              {isPositive ? '+' : ''}{priceChange.toFixed(2)} ({isPositive ? '+' : ''}{percentChange.toFixed(2)}%)
+              Live Price (Real-time)
             </span>
           </div>
         </div>
       </CardHeader>
       <CardContent className="h-64">
-        {priceData.length > 0 && (
+        {priceData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={priceData}
@@ -108,6 +92,10 @@ const PriceChart = ({ symbol = 'BTCUSDT' }: PriceChartProps) => {
               />
             </AreaChart>
           </ResponsiveContainer>
+        ) : (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-muted-foreground">Loading price data...</p>
+          </div>
         )}
       </CardContent>
     </Card>

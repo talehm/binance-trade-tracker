@@ -28,6 +28,10 @@ interface TradingContextType {
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
 
+// Supported pairs
+const SUPPORTED_PAIRS = ['ADAEUR', 'BTCEUR'];
+const SUPPORTED_ASSETS = ['ADA', 'BTC'];
+
 export function TradingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -57,14 +61,14 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   
   // Set up price refresh interval
   useEffect(() => {
-    if (isAuthenticated && accountInfo) {
+    if (isAuthenticated) {
       const intervalId = setInterval(() => {
         refreshPrices();
       }, 10000); // Refresh every 10 seconds
       
       return () => clearInterval(intervalId);
     }
-  }, [isAuthenticated, accountInfo]);
+  }, [isAuthenticated]);
   
   const authenticate = async (apiKey: string, apiSecret: string) => {
     setIsLoading(true);
@@ -104,16 +108,24 @@ export function TradingProvider({ children }: { children: ReactNode }) {
       // Load account info
       const account = await binanceApi.getAccountInfo();
       if (account) {
+        // Filter account balances to only include supported assets
+        account.balances = account.balances.filter(asset => 
+          SUPPORTED_ASSETS.includes(asset.asset)
+        );
+        
         setAccountInfo(account);
         
         // Set default selected asset if not already set
         if (!selectedAsset && account.balances.length > 0) {
-          const nonZeroBalances = account.balances.filter(
-            asset => parseFloat(asset.free) > 0 || parseFloat(asset.locked) > 0
+          const supportedBalances = account.balances.filter(
+            asset => SUPPORTED_ASSETS.includes(asset.asset) && 
+            (parseFloat(asset.free) > 0 || parseFloat(asset.locked) > 0)
           );
           
-          if (nonZeroBalances.length > 0) {
-            setSelectedAsset(nonZeroBalances[0].asset);
+          if (supportedBalances.length > 0) {
+            setSelectedAsset(supportedBalances[0].asset);
+          } else if (account.balances.length > 0) {
+            setSelectedAsset(SUPPORTED_ASSETS[0]);
           }
         }
       }
@@ -151,17 +163,28 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   };
   
   const selectAsset = (asset: string) => {
+    if (!SUPPORTED_ASSETS.includes(asset)) {
+      toast.error(`Asset ${asset} is not supported. Only ${SUPPORTED_ASSETS.join(', ')} are supported.`);
+      return;
+    }
+    
     setSelectedAsset(asset);
     
     // Load trade history for this asset if we don't already have it
-    if (!tradeHistory.has(`${asset}USDT`)) {
-      getAssetTradeHistory(`${asset}USDT`);
+    const symbol = `${asset}EUR`;
+    if (!tradeHistory.has(symbol)) {
+      getAssetTradeHistory(symbol);
     }
   };
   
   const createOrder = async (order: OrderRequest) => {
     setIsLoading(true);
     try {
+      if (!SUPPORTED_ASSETS.includes(order.symbol.replace('EUR', ''))) {
+        toast.error(`Symbol ${order.symbol} is not supported. Only ${SUPPORTED_PAIRS.join(', ')} are supported.`);
+        return null;
+      }
+      
       const newOrder = await binanceApi.createOrder(order);
       if (newOrder) {
         // Refresh open orders
@@ -182,6 +205,11 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   
   const getAssetTradeHistory = async (symbol: string) => {
     try {
+      if (!SUPPORTED_PAIRS.includes(symbol)) {
+        toast.error(`Symbol ${symbol} is not supported. Only ${SUPPORTED_PAIRS.join(', ')} are supported.`);
+        return null;
+      }
+      
       const history = await binanceApi.getTradeHistory(symbol);
       if (history) {
         setTradeHistory(prev => new Map(prev).set(symbol, history));

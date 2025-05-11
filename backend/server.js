@@ -42,13 +42,29 @@ const authenticateApiKey = (req, res, next) => {
   next();
 };
 
+// Supported pairs validation middleware
+const validateSupportedPairs = (req, res, next) => {
+  const supportedPairs = ['ADAEUR', 'BTCEUR'];
+  
+  // Check if the request is for a specific symbol
+  if (req.query && req.query.symbol) {
+    if (!supportedPairs.includes(req.query.symbol)) {
+      return res.status(400).json({ 
+        error: `Symbol ${req.query.symbol} is not supported. Only ${supportedPairs.join(', ')} are supported.` 
+      });
+    }
+  }
+  
+  next();
+};
+
 // Routes
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
 // Binance API proxy with authentication using env variables
-app.use('/api/binance', authenticateApiKey, createProxyMiddleware({
+app.use('/api/binance', authenticateApiKey, validateSupportedPairs, createProxyMiddleware({
   target: 'https://api.binance.com',
   changeOrigin: true,
   pathRewrite: {
@@ -56,7 +72,14 @@ app.use('/api/binance', authenticateApiKey, createProxyMiddleware({
   },
   onProxyReq: (proxyReq, req) => {
     // Add Binance API key header from environment variable
-    proxyReq.setHeader('X-MBX-APIKEY', process.env.BINANCE_API_KEY);
+    if (process.env.BINANCE_API_KEY) {
+      proxyReq.setHeader('X-MBX-APIKEY', process.env.BINANCE_API_KEY);
+    } else if (req.headers['binance-api-key']) {
+      proxyReq.setHeader('X-MBX-APIKEY', req.headers['binance-api-key']);
+      // Remove our custom header to avoid conflicts
+      proxyReq.removeHeader('binance-api-key');
+      proxyReq.removeHeader('binance-api-secret');
+    }
     
     // For endpoints requiring signatures
     if (req.method === 'POST' || req.url.includes('api/v3/account')) {
@@ -65,20 +88,32 @@ app.use('/api/binance', authenticateApiKey, createProxyMiddleware({
       // Add timestamp parameter
       let query = `timestamp=${timestamp}`;
       
-      // Calculate signature using environment variable
-      const signature = crypto
-        .createHmac('sha256', process.env.BINANCE_API_SECRET)
-        .update(query)
-        .digest('hex');
+      // Get API secret - either from env or header
+      let apiSecret = process.env.BINANCE_API_SECRET;
+      if (!apiSecret && req.headers['binance-api-secret']) {
+        apiSecret = req.headers['binance-api-secret'];
+      }
       
-      // Add signature to query
-      query += `&signature=${signature}`;
-      
-      // Append to URL for GET requests
-      if (req.method === 'GET') {
-        proxyReq.path += (proxyReq.path.includes('?') ? '&' : '?') + query;
+      // Calculate signature
+      if (apiSecret) {
+        const signature = crypto
+          .createHmac('sha256', apiSecret)
+          .update(query)
+          .digest('hex');
+        
+        // Add signature to query
+        query += `&signature=${signature}`;
+        
+        // Append to URL for GET requests
+        if (req.method === 'GET') {
+          proxyReq.path += (proxyReq.path.includes('?') ? '&' : '?') + query;
+        }
       }
     }
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    // You can add logging here if needed
+    console.log(`Proxied request: ${req.method} ${req.path}`);
   }
 }));
 
@@ -96,4 +131,5 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`💻 Health check available at http://localhost:${PORT}/api/health`);
   console.log(`🔒 API is protected with API key authentication`);
+  console.log(`📊 Supporting trading pairs: ADAEUR, BTCEUR`);
 });
