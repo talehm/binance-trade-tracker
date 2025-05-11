@@ -93,5 +93,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`💻 Health check available at http://localhost:${PORT}/api/health`);
+  console.log(`🔒 API is protected with API key authentication`);
 });
