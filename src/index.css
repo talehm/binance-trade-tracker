@@ -69,15 +69,16 @@
     @apply bg-crypto-card rounded-lg border border-border p-4 shadow-md;
   }
   
+  /* Use direct color values from tailwind config instead of circular @apply */
   .text-profit {
-    @apply text-profit;
+    color: #22c55e;
   }
   
   .text-loss {
-    @apply text-loss;
+    color: #ef4444;
   }
   
   .text-neutral {
-    @apply text-neutral;
+    color: #94a3b8;
   }
 }
