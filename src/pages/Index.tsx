@@ -1,12 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useTrading } from '@/context/TradingContext';
+import Dashboard from '@/components/Dashboard';
+import AuthForm from '@/components/AuthForm';
 
 const Index = () => {
+  const { isAuthenticated, isLoading } = useTrading();
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="container mx-auto py-8 px-4">
+      {isLoading && !isAuthenticated && (
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
+          <div className="animate-pulse text-center">
+            <h2 className="text-2xl font-bold mb-4">Connecting to Binance...</h2>
+            <p className="text-muted-foreground">Please wait while we establish a connection.</p>
+          </div>
+        </div>
+      )}
+      
+      {!isLoading && !isAuthenticated && (
+        <div className="max-w-md mx-auto py-12">
+          <AuthForm />
+        </div>
+      )}
+      
+      {isAuthenticated && (
+        <Dashboard />
+      )}
     </div>
   );
 };
