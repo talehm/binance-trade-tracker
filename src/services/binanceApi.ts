@@ -281,9 +281,8 @@ class BinanceApi {
       
       const results: TickerPrice[] = [];
       
-      for (const pair of this.supportedPairs) {
         try {
-          const response = await fetch(`${this.backendUrl}/api/v3/ticker/price?symbol=${pair}`, {
+          const response = await fetch(`${this.backendUrl}/api/v3/ticker/price?symbols=${encodeURIComponent(JSON.stringify(this.supportedPairs))}`, {
             headers: this.getHeaders()
           });
           
@@ -296,7 +295,7 @@ class BinanceApi {
         } catch (e) {
           console.error(`Error fetching price for ${pair}:`, e);
         }
-      }
+      
       
       if (results.length === 0) {
         throw new Error('Failed to fetch any price information');
