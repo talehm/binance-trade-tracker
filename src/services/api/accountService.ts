@@ -2,7 +2,7 @@
 import { AccountInfo } from "./types";
 import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError } from "./utils";
-import { mockAccountInfo } from "./mockData";
+import { mockAccountInfo } from "./mockData/accountMock";
 
 export class AccountService {
   /**

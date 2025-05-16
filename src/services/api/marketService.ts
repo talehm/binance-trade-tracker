@@ -2,7 +2,7 @@
 import { TickerPrice } from "./types";
 import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError, validateSymbol } from "./utils";
-import { mockTickerPrices } from "./mockData";
+import { mockTickerPrices, mockPriceHistory, mockOrderBook } from "./mockData/marketMock";
 
 export class MarketService {
   /**
@@ -68,6 +68,66 @@ export class MarketService {
       return results;
     } catch (error) {
       return handleApiError(error, 'Failed to load price information');
+    }
+  }
+  
+  /**
+   * Get price history for a symbol
+   */
+  async getPriceHistory(symbol: string, interval = "1d", limit = 7): Promise<any | null> {
+    try {
+      if (!validateSymbol(symbol)) {
+        return null;
+      }
+      
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log(`Using mock price history data for ${symbol}`);
+        return mockPriceHistory[symbol] || [];
+      }
+      
+      const response = await fetch(
+        `${API_CONFIG.backendUrl}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+        { headers: buildHeaders() }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      return handleApiError(error, `Failed to load price history for ${symbol}`);
+    }
+  }
+  
+  /**
+   * Get order book for a symbol
+   */
+  async getOrderBook(symbol: string, limit = 5): Promise<any | null> {
+    try {
+      if (!validateSymbol(symbol)) {
+        return null;
+      }
+      
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log(`Using mock order book data for ${symbol}`);
+        return mockOrderBook[symbol] || { bids: [], asks: [] };
+      }
+      
+      const response = await fetch(
+        `${API_CONFIG.backendUrl}/api/v3/depth?symbol=${symbol}&limit=${limit}`,
+        { headers: buildHeaders() }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      return handleApiError(error, `Failed to load order book for ${symbol}`);
     }
   }
 }

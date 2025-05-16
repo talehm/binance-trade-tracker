@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/sonner";
 import { AccountService } from "./api/accountService";
 import { MarketService } from "./api/marketService";
@@ -21,14 +20,18 @@ class BinanceApi {
   private tradeService: TradeService;
   
   constructor() {
-    // Initialize services without API keys since they're now handled by the backend
+    // Initialize services
     this.accountService = new AccountService();
     this.marketService = new MarketService();
     this.tradeService = new TradeService();
   }
   
   hasCredentials(): boolean {
-    // Check if backend URL is available
+    // For mock data, always return true
+    if (API_CONFIG.useMockData) {
+      return true;
+    }
+    // Otherwise check if backend URL is available
     return API_CONFIG.backendUrl !== '';
   }
 
@@ -50,6 +53,14 @@ class BinanceApi {
   
   getAllTickerPrices() {
     return this.marketService.getAllTickerPrices();
+  }
+  
+  getPriceHistory(symbol: string, interval?: string, limit?: number) {
+    return this.marketService.getPriceHistory(symbol, interval, limit);
+  }
+  
+  getOrderBook(symbol: string, limit?: number) {
+    return this.marketService.getOrderBook(symbol, limit);
   }
   
   // Trade service methods
