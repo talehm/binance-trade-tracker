@@ -2,6 +2,7 @@
 import { AccountInfo } from "./types";
 import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError } from "./utils";
+import { mockAccountInfo } from "./mockData";
 
 export class AccountService {
   /**
@@ -9,6 +10,12 @@ export class AccountService {
    */
   async testConnection(): Promise<boolean> {
     try {
+      // In development mode or if USE_MOCK_DATA is true, return true directly
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log('Using mock data for API connection test');
+        return true;
+      }
+      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/ping`, {
         headers: buildHeaders()
       });
@@ -28,6 +35,12 @@ export class AccountService {
    */
   async getAccountInfo(): Promise<AccountInfo | null> {
     try {
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log('Using mock account information data');
+        return mockAccountInfo;
+      }
+      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/account`, {
         headers: buildHeaders()
       });

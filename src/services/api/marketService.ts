@@ -2,6 +2,7 @@
 import { TickerPrice } from "./types";
 import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError, validateSymbol } from "./utils";
+import { mockTickerPrices } from "./mockData";
 
 export class MarketService {
   /**
@@ -11,6 +12,13 @@ export class MarketService {
     try {
       if (!validateSymbol(symbol)) {
         return null;
+      }
+      
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log(`Using mock price data for ${symbol}`);
+        const mockPrice = mockTickerPrices.find(ticker => ticker.symbol === symbol);
+        return mockPrice || { symbol, price: "0" };
       }
       
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {
@@ -32,6 +40,12 @@ export class MarketService {
    */
   async getAllTickerPrices(): Promise<TickerPrice[] | null> {
     try {
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log('Using mock ticker prices data');
+        return mockTickerPrices;
+      }
+      
       // Create separate requests for each symbol
       const promises = API_CONFIG.supportedPairs.map(symbol =>
         fetch(`${API_CONFIG.backendUrl}/api/v3/ticker/price?symbol=${symbol}`, {

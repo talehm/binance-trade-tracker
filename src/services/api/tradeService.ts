@@ -2,6 +2,7 @@
 import { Order, OrderRequest, TradeHistory } from "./types";
 import { API_CONFIG } from "./config";
 import { buildHeaders, handleApiError, validateSymbol } from "./utils";
+import { mockOpenOrders, mockTradeHistory } from "./mockData";
 
 export class TradeService {
   /**
@@ -9,6 +10,12 @@ export class TradeService {
    */
   async getOpenOrders(): Promise<Order[] | null> {
     try {
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log('Using mock open orders data');
+        return mockOpenOrders;
+      }
+      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/openOrders`, {
         headers: buildHeaders()
       });
@@ -37,6 +44,34 @@ export class TradeService {
         return null;
       }
       
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log('Using mock order creation data');
+        // Create a synthetic order based on the request
+        const mockOrder: Order = {
+          symbol: order.symbol,
+          orderId: Math.floor(Math.random() * 10000000),
+          orderListId: -1,
+          clientOrderId: `mock-${Date.now()}`,
+          price: order.price?.toString() || "0",
+          origQty: order.quantity.toString(),
+          executedQty: "0",
+          cummulativeQuoteQty: "0",
+          status: "NEW",
+          timeInForce: order.timeInForce || "GTC",
+          type: order.type,
+          side: order.side,
+          stopPrice: order.stopPrice?.toString() || "0",
+          icebergQty: order.icebergQty?.toString() || "0",
+          time: Date.now(),
+          updateTime: Date.now(),
+          isWorking: true,
+          origQuoteOrderQty: "0"
+        };
+        
+        return mockOrder;
+      }
+      
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/order`, {
         method: 'POST',
         headers: buildHeaders(),
@@ -61,6 +96,12 @@ export class TradeService {
     try {
       if (!validateSymbol(symbol)) {
         return null;
+      }
+      
+      // In development mode or if USE_MOCK_DATA is true, return mock data
+      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+        console.log(`Using mock trade history data for ${symbol}`);
+        return mockTradeHistory[symbol] || [];
       }
       
       const response = await fetch(`${API_CONFIG.backendUrl}/api/v3/myTrades?symbol=${symbol}`, {

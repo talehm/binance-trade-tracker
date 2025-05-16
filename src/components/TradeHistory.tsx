@@ -17,7 +17,7 @@ const TradeHistory = () => {
     );
   }
   
-  const symbol = `${selectedAsset}USDT`;
+  const symbol = `${selectedAsset}EUR`;
   const trades = tradeHistory.get(symbol) || [];
   
   if (trades.length === 0) {

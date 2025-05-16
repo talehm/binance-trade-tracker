@@ -9,5 +9,6 @@ export const API_CONFIG = {
   supportedPairs: ['ADAEUR', 'BTCEUR'], // Only support these pairs
   isDevMode: import.meta.env.DEV, // Check if we're in development mode
   binanceApiKey: import.meta.env.VITE_BINANCE_API_KEY,
-  binanceApiSecret: import.meta.env.VITE_BINANCE_API_SECRET
+  binanceApiSecret: import.meta.env.VITE_BINANCE_API_SECRET,
+  useMockData: import.meta.env.VITE_USE_MOCK_DATA === 'true' || import.meta.env.DEV // Use mock data in dev mode by default
 };
