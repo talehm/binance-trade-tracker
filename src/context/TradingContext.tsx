@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/components/ui/sonner";
 import binanceApi, { 
@@ -114,14 +113,8 @@ export function TradingProvider({ children }: { children: ReactNode }) {
         refreshPrices();
       }, 10000); // Refresh every 10 seconds
       
-      // Set up daily check for automated orders
-      const dailyCheckInterval = setInterval(() => {
-        processAutomatedOrders();
-      }, 1000 * 60 * 60 * 24); // Check every 24 hours
-      
       return () => {
         clearInterval(intervalId);
-        clearInterval(dailyCheckInterval);
       };
     }
   }, [isAuthenticated]);
@@ -247,7 +240,6 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   };
   
   const processAutomatedOrders = async () => {
-    setIsLoading(true);
     try {
       // First update status of existing orders
       await automatedOrderService.updateOrderStatus();
@@ -258,12 +250,10 @@ export function TradingProvider({ children }: { children: ReactNode }) {
       // Refresh data to show new orders
       await refreshData();
       
-      toast.success('Automated orders processed successfully');
+      return true;
     } catch (error) {
       console.error('Error processing automated orders:', error);
-      toast.error('Failed to process automated orders');
-    } finally {
-      setIsLoading(false);
+      throw error; // Re-throw the error so component can handle it
     }
   };
   

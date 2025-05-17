@@ -20,6 +20,7 @@ interface StoredOrder {
 
 class AutomatedOrderService {
   private storedOrders: StoredOrder[] = [];
+  private isProcessing: boolean = false;
   
   constructor() {
     this.loadStoredOrders();
@@ -58,12 +59,25 @@ class AutomatedOrderService {
    * Process all supported pairs and create orders as needed
    */
   async processAutomatedOrders(): Promise<void> {
-    for (const symbol of API_CONFIG.supportedPairs) {
-      try {
-        await this.processSymbol(symbol);
-      } catch (error) {
-        console.error(`Error processing automated orders for ${symbol}:`, error);
+    // Prevent multiple simultaneous processing
+    if (this.isProcessing) {
+      console.log("Already processing automated orders, skipping");
+      return;
+    }
+    
+    try {
+      this.isProcessing = true;
+      
+      for (const symbol of API_CONFIG.supportedPairs) {
+        try {
+          await this.processSymbol(symbol);
+        } catch (error) {
+          console.error(`Error processing automated orders for ${symbol}:`, error);
+        }
       }
+    } finally {
+      // Always reset the processing flag to prevent deadlocks
+      this.isProcessing = false;
     }
   }
   
@@ -257,63 +271,66 @@ class AutomatedOrderService {
    * Update status of existing orders
    */
   async updateOrderStatus(): Promise<void> {
-    // Get all open orders
-    const openOrders = await binanceApi.getOpenOrders();
-    if (!openOrders) {
+    // Prevent multiple simultaneous processing
+    if (this.isProcessing) {
+      console.log("Already processing automated orders status, skipping");
       return;
     }
     
-    // For each supported symbol
-    for (const symbol of API_CONFIG.supportedPairs) {
-      // Get trade history for the symbol
-      const tradeHistory = await binanceApi.getTradeHistory(symbol);
-      if (!tradeHistory) {
-        continue;
+    try {
+      this.isProcessing = true;
+      
+      // Get all open orders
+      const openOrders = await binanceApi.getOpenOrders();
+      if (!openOrders) {
+        return;
       }
       
-      // Get stored orders for this symbol that are not yet executed
-      const pendingStoredOrders = this.storedOrders.filter(
-        order => order.symbol === symbol && 
-        order.status === "CREATED" && 
-        order.orderId !== undefined
-      );
-      
-      // Check if any of these orders have been executed
-      for (const storedOrder of pendingStoredOrders) {
-        // Check if order is still open
-        const isStillOpen = openOrders.some(order => order.orderId === storedOrder.orderId);
+      // For each supported symbol
+      for (const symbol of API_CONFIG.supportedPairs) {
+        // Get trade history for the symbol
+        const tradeHistory = await binanceApi.getTradeHistory(symbol);
+        if (!tradeHistory) {
+          continue;
+        }
         
-        if (!isStillOpen) {
-          // Check if it's in the trade history
-          const matchingTrade = tradeHistory.find(
-            trade => parseFloat(trade.price).toFixed(2) === parseFloat(storedOrder.price).toFixed(2)
-          );
+        // Get stored orders for this symbol that are not yet executed
+        const pendingStoredOrders = this.storedOrders.filter(
+          order => order.symbol === symbol && 
+          order.status === "CREATED" && 
+          order.orderId !== undefined
+        );
+        
+        // Check if any of these orders have been executed
+        for (const storedOrder of pendingStoredOrders) {
+          // Check if order is still open
+          const isStillOpen = openOrders.some(order => order.orderId === storedOrder.orderId);
           
-          if (matchingTrade) {
-            // Order has been executed
-            console.log(`Order ${storedOrder.id} (${storedOrder.symbol} ${storedOrder.side}) has been executed`);
-            storedOrder.status = "EXECUTED";
-            storedOrder.timestamp = Date.now();
+          if (!isStillOpen) {
+            // Check if it's in the trade history
+            const matchingTrade = tradeHistory.find(
+              trade => parseFloat(trade.price).toFixed(2) === parseFloat(storedOrder.price).toFixed(2)
+            );
             
-            // Create the opposite order
-            if (storedOrder.side === "BUY") {
-              await this.createSellOrder(
-                storedOrder.symbol, 
-                parseFloat(storedOrder.quantity)
-              );
-            } else {
-              await this.createBuyOrder(
-                storedOrder.symbol, 
-                parseFloat(storedOrder.quantity)
-              );
+            if (matchingTrade) {
+              // Order has been executed
+              console.log(`Order ${storedOrder.id} (${storedOrder.symbol} ${storedOrder.side}) has been executed`);
+              storedOrder.status = "EXECUTED";
+              storedOrder.timestamp = Date.now();
+              
+              // Don't create the opposite order here to prevent potential loops
+              // Instead we'll just mark it as executed and let the next processAutomatedOrders call handle it
             }
           }
         }
       }
+      
+      // Save updated stored orders
+      this.saveStoredOrders();
+    } finally {
+      // Always reset the processing flag to prevent deadlocks
+      this.isProcessing = false;
     }
-    
-    // Save updated stored orders
-    this.saveStoredOrders();
   }
 }
 

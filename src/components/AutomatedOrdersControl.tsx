@@ -18,7 +18,7 @@ const AutomatedOrdersControl = () => {
   }, []);
   
   const handleProcessOrders = async () => {
-    if (cooldownActive || isProcessing) return;
+    if (cooldownActive || isProcessing || isLoading) return;
     
     try {
       setIsProcessing(true);
