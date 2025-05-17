@@ -12,9 +12,15 @@ import SimulationToggle from '@/components/SimulationToggle';
 const AutomatedOrdersPage = () => {
   const { toast } = useToast();
   const { isLoading, refreshData, processAutomatedOrders } = useTrading();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [cooldownActive, setCooldownActive] = useState(false);
+  const COOLDOWN_TIME = 10000; // 10 seconds cooldown
   
   useEffect(() => {
     refreshData();
+    
+    // Reset cooldown when component unmounts
+    return () => setCooldownActive(false);
   }, [refreshData]);
   
   const handleRefresh = () => {
@@ -26,11 +32,35 @@ const AutomatedOrdersPage = () => {
   };
   
   const handleProcessOrders = async () => {
-    await processAutomatedOrders();
-    toast({
-      title: "Orders processed",
-      description: "Automated orders have been processed."
-    });
+    if (cooldownActive || isProcessing) return;
+    
+    try {
+      setIsProcessing(true);
+      setCooldownActive(true);
+      
+      // Process orders
+      await processAutomatedOrders();
+      
+      toast({
+        title: "Orders processed",
+        description: "Automated orders have been processed."
+      });
+      
+      // Set cooldown timer
+      setTimeout(() => {
+        setCooldownActive(false);
+      }, COOLDOWN_TIME);
+      
+    } catch (error) {
+      toast({
+        title: "Process failed",
+        description: "Failed to process automated orders.",
+        variant: "destructive"
+      });
+      console.error("Error processing orders:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
   
   return (
@@ -42,11 +72,14 @@ const AutomatedOrdersPage = () => {
         </div>
         <div className="flex items-center gap-4">
           <SimulationToggle />
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading || isProcessing}>
             Refresh
           </Button>
-          <Button onClick={handleProcessOrders} disabled={isLoading}>
-            Process Orders
+          <Button 
+            onClick={handleProcessOrders} 
+            disabled={isLoading || cooldownActive || isProcessing}
+          >
+            {isLoading || isProcessing ? 'Processing...' : cooldownActive ? 'Cooldown...' : 'Process Orders'}
           </Button>
           <Button variant="outline" asChild>
             <Link to="/">Back to Dashboard</Link>
