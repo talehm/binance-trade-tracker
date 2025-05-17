@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { TradingProvider } from "@/context/TradingContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import AutomatedOrdersPage from "./pages/AutomatedOrdersPage";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,7 @@ const App = () => (
           <Sonner />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/automated-orders" element={<AutomatedOrdersPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
