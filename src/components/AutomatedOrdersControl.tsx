@@ -2,9 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { useTrading } from "@/context/TradingContext";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 const AutomatedOrdersControl = () => {
-  const { processAutomatedOrders, isLoading } = useTrading();
+  const { processAutomatedOrders, isLoading, isSimulationMode } = useTrading();
   const [lastProcessed, setLastProcessed] = useState<Date | null>(null);
   
   const handleProcessOrders = async () => {
@@ -14,7 +15,15 @@ const AutomatedOrdersControl = () => {
   
   return (
     <div className="crypto-card">
-      <h2 className="text-xl font-semibold mb-4">Automated Orders</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Automated Orders</h2>
+        {isSimulationMode && (
+          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+            Simulation
+          </Badge>
+        )}
+      </div>
+      
       <p className="text-muted-foreground mb-4">
         Process orders automatically based on trade history. System will create BUY orders at 10% below current price,
         and SELL orders at 10% above current price after a BUY order is executed.

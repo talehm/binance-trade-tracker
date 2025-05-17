@@ -7,6 +7,7 @@ import CreateOrderForm from "./CreateOrderForm";
 import OpenOrdersTable from "./OpenOrdersTable";
 import TradeHistory from "./TradeHistory";
 import AutomatedOrdersControl from "./AutomatedOrdersControl";
+import SimulationToggle from "./SimulationToggle";
 
 const Dashboard = () => {
   // Use the trading context
@@ -14,7 +15,10 @@ const Dashboard = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Crypto Trading Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Crypto Trading Dashboard</h1>
+        <SimulationToggle />
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="md:col-span-2">

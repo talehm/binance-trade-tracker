@@ -10,5 +10,8 @@ export const API_CONFIG = {
   isDevMode: import.meta.env.DEV, // Check if we're in development mode
   binanceApiKey: import.meta.env.VITE_BINANCE_API_KEY,
   binanceApiSecret: import.meta.env.VITE_BINANCE_API_SECRET,
-  useMockData: import.meta.env.VITE_USE_MOCK_DATA === 'true' || true // Always use mock data by default
+  // We'll initialize with default value, but it will be updated by the TradingContext
+  useMockData: localStorage.getItem('simulationMode') !== null 
+    ? JSON.parse(localStorage.getItem('simulationMode') as string) 
+    : true
 };

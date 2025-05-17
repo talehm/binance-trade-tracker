@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/components/ui/sonner";
 import binanceApi, { 
@@ -19,6 +20,8 @@ interface TradingContextType {
   openOrders: Order[] | null;
   selectedAsset: string | null;
   tradeHistory: Map<string, TradeHistory[]>;
+  isSimulationMode: boolean;
+  toggleSimulationMode: () => void;
   refreshData: () => Promise<void>;
   selectAsset: (asset: string) => void;
   createOrder: (order: OrderRequest) => Promise<Order | null>;
@@ -32,6 +35,12 @@ const TradingContext = createContext<TradingContextType | undefined>(undefined);
 const SUPPORTED_PAIRS = API_CONFIG.supportedPairs;
 const SUPPORTED_ASSETS = SUPPORTED_PAIRS.map(pair => pair.replace('EUR', ''));
 
+// Get simulation mode from localStorage or default to true
+const getInitialSimulationMode = (): boolean => {
+  const saved = localStorage.getItem('simulationMode');
+  return saved !== null ? JSON.parse(saved) : true;
+};
+
 export function TradingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,6 +49,30 @@ export function TradingProvider({ children }: { children: ReactNode }) {
   const [openOrders, setOpenOrders] = useState<Order[] | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [tradeHistory, setTradeHistory] = useState<Map<string, TradeHistory[]>>(new Map());
+  const [isSimulationMode, setIsSimulationMode] = useState(getInitialSimulationMode);
+  
+  // Update API_CONFIG when simulation mode changes
+  useEffect(() => {
+    API_CONFIG.useMockData = isSimulationMode;
+    
+    // Save to localStorage
+    localStorage.setItem('simulationMode', JSON.stringify(isSimulationMode));
+    
+    // Refresh data when simulation mode changes
+    refreshData();
+    
+    // Show toast message
+    if (isSimulationMode) {
+      toast.success('Switched to simulation mode');
+    } else {
+      toast.success('Switched to real API mode');
+    }
+  }, [isSimulationMode]);
+  
+  // Toggle simulation mode
+  const toggleSimulationMode = () => {
+    setIsSimulationMode(prev => !prev);
+  };
   
   // Check if API credentials are available
   useEffect(() => {
@@ -242,6 +275,8 @@ export function TradingProvider({ children }: { children: ReactNode }) {
     openOrders,
     selectedAsset,
     tradeHistory,
+    isSimulationMode,
+    toggleSimulationMode,
     refreshData,
     selectAsset,
     createOrder,
