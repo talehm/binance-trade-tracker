@@ -46,19 +46,19 @@ const AutomatedOrdersTable = () => {
   const executedOrders = orders.filter(order => order.status === "EXECUTED");
   const failedOrders = orders.filter(order => order.status === "FAILED");
   
-  // Get badge variant based on order status
-  const getBadgeVariant = (status: string) => {
+  // Get badge variant based on order status - fixed to return only allowed variants
+  const getBadgeVariant = (status: string): "default" | "destructive" | "outline" | "secondary" => {
     switch (status) {
       case "PENDING": return "secondary";
       case "CREATED": return "default";
-      case "EXECUTED": return "success";
+      case "EXECUTED": return "outline"; // Changed from 'success' to 'outline'
       case "FAILED": return "destructive";
       default: return "outline";
     }
   };
   
-  // Get badge variant based on order side
-  const getSideBadgeVariant = (side: "BUY" | "SELL") => {
+  // Get badge variant based on order side - fixed to return only allowed variants
+  const getSideBadgeVariant = (side: "BUY" | "SELL"): "default" | "destructive" | "outline" | "secondary" => {
     return side === "BUY" ? "default" : "destructive";
   };
   
@@ -92,8 +92,8 @@ const AutomatedOrdersTable = () => {
 
 interface OrdersTableProps {
   orders: StoredOrder[];
-  getBadgeVariant: (status: string) => string;
-  getSideBadgeVariant: (side: "BUY" | "SELL") => string;
+  getBadgeVariant: (status: string) => "default" | "destructive" | "outline" | "secondary";
+  getSideBadgeVariant: (side: "BUY" | "SELL") => "default" | "destructive" | "outline" | "secondary";
 }
 
 const OrdersTable = ({ orders, getBadgeVariant, getSideBadgeVariant }: OrdersTableProps) => {
