@@ -1,60 +1,44 @@
 
-import { useTrading } from '@/context/TradingContext';
-import AssetTable from '@/components/AssetTable';
-import OpenOrdersTable from '@/components/OpenOrdersTable';
-import PriceChart from '@/components/PriceChart';
-import TradeHistory from '@/components/TradeHistory';
-import CreateOrderForm from '@/components/CreateOrderForm';
-import { Button } from '@/components/ui/button';
-import { History, Wallet, TrendingUp, RefreshCcw } from 'lucide-react';
+import { useTrading } from "@/context/TradingContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AssetTable from "./AssetTable";
+import PriceChart from "./PriceChart";
+import CreateOrderForm from "./CreateOrderForm";
+import OpenOrdersTable from "./OpenOrdersTable";
+import TradeHistory from "./TradeHistory";
+import AutomatedOrdersControl from "./AutomatedOrdersControl";
 
 const Dashboard = () => {
-  const { refreshData, selectedAsset, isLoading } = useTrading();
-  
-  const handleRefresh = () => {
-    refreshData();
-  };
-  
+  // Use the trading context
+  const { selectedAsset } = useTrading();
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold flex items-center">
-          <Wallet className="mr-2 h-8 w-8 text-primary" /> Binance Trading Dashboard
-        </h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading} className="flex items-center">
-            <RefreshCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? "Refreshing..." : "Refresh"}
-          </Button>
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Crypto Trading Dashboard</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="md:col-span-2">
+          <AssetTable />
+        </div>
+        <div>
+          <AutomatedOrdersControl />
         </div>
       </div>
       
-      <AssetTable />
-      
-      {selectedAsset && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <PriceChart symbol={`${selectedAsset}EUR`} />
-          </div>
-          <div>
-            <CreateOrderForm />
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="md:col-span-2">
+          <PriceChart />
         </div>
-      )}
+        <div>
+          <CreateOrderForm />
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Open Orders</h2>
-          </div>
           <OpenOrdersTable />
         </div>
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <History className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Trade History</h2>
-          </div>
           <TradeHistory />
         </div>
       </div>

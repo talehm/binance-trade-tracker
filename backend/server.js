@@ -44,7 +44,7 @@ const authenticateApiKey = (req, res, next) => {
 
 // Supported pairs validation middleware
 const validateSupportedPairs = (req, res, next) => {
-  const supportedPairs = ['ADAEUR', 'BTCEUR'];
+  const supportedPairs = ['ADAEUR', 'BTCEUR', 'ETHEUR'];
   
   // Check if the request is for a specific symbol
   if (req.query && req.query.symbol) {
@@ -131,5 +131,5 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`💻 Health check available at http://localhost:${PORT}/api/health`);
   console.log(`🔒 API is protected with API key authentication`);
-  console.log(`📊 Supporting trading pairs: ADAEUR, BTCEUR`);
+  console.log(`📊 Supporting trading pairs: ADAEUR, BTCEUR, ETHEUR`);
 });

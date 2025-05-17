@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/components/ui/sonner";
 import binanceApi, { 
@@ -10,6 +9,7 @@ import binanceApi, {
   TradeHistory 
 } from '@/services/binanceApi';
 import { API_CONFIG } from '@/services/api/config';
+import automatedOrderService from '@/services/automatedOrderService';
 
 interface TradingContextType {
   isLoading: boolean;
@@ -23,13 +23,14 @@ interface TradingContextType {
   selectAsset: (asset: string) => void;
   createOrder: (order: OrderRequest) => Promise<Order | null>;
   getAssetTradeHistory: (symbol: string) => Promise<TradeHistory[] | null>;
+  processAutomatedOrders: () => Promise<void>;
 }
 
 const TradingContext = createContext<TradingContextType | undefined>(undefined);
 
 // Supported pairs
-const SUPPORTED_PAIRS = ['ADAEUR', 'BTCEUR'];
-const SUPPORTED_ASSETS = ['ADA', 'BTC'];
+const SUPPORTED_PAIRS = API_CONFIG.supportedPairs;
+const SUPPORTED_ASSETS = SUPPORTED_PAIRS.map(pair => pair.replace('EUR', ''));
 
 export function TradingProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -52,6 +53,9 @@ export function TradingProvider({ children }: { children: ReactNode }) {
           if (isConnected) {
             await refreshData();
             toast.success('Successfully connected to Binance API');
+            
+            // Process automated orders on initial load
+            await processAutomatedOrders();
           } else {
             toast.error('Could not connect to Binance API. Please check your API keys in the environment variables.');
           }
@@ -77,7 +81,15 @@ export function TradingProvider({ children }: { children: ReactNode }) {
         refreshPrices();
       }, 10000); // Refresh every 10 seconds
       
-      return () => clearInterval(intervalId);
+      // Set up daily check for automated orders
+      const dailyCheckInterval = setInterval(() => {
+        processAutomatedOrders();
+      }, 1000 * 60 * 60 * 24); // Check every 24 hours
+      
+      return () => {
+        clearInterval(intervalId);
+        clearInterval(dailyCheckInterval);
+      };
     }
   }, [isAuthenticated]);
   
@@ -201,6 +213,27 @@ export function TradingProvider({ children }: { children: ReactNode }) {
     }
   };
   
+  const processAutomatedOrders = async () => {
+    setIsLoading(true);
+    try {
+      // First update status of existing orders
+      await automatedOrderService.updateOrderStatus();
+      
+      // Then process new automated orders
+      await automatedOrderService.processAutomatedOrders();
+      
+      // Refresh data to show new orders
+      await refreshData();
+      
+      toast.success('Automated orders processed successfully');
+    } catch (error) {
+      console.error('Error processing automated orders:', error);
+      toast.error('Failed to process automated orders');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   const value = {
     isLoading,
     isAuthenticated,
@@ -212,7 +245,8 @@ export function TradingProvider({ children }: { children: ReactNode }) {
     refreshData,
     selectAsset,
     createOrder,
-    getAssetTradeHistory
+    getAssetTradeHistory,
+    processAutomatedOrders
   };
   
   return (
