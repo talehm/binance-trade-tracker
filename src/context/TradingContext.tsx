@@ -249,8 +249,6 @@ export function TradingProvider({ children }: { children: ReactNode }) {
       
       // Refresh data to show new orders
       await refreshData();
-      
-      return true;
     } catch (error) {
       console.error('Error processing automated orders:', error);
       throw error; // Re-throw the error so component can handle it

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { useTrading } from "@/context/TradingContext";
 import { useState, useEffect } from "react";
