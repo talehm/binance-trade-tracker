@@ -2,11 +2,10 @@ import { OrderRequest, Order, TradeHistory } from "./api/types";
 import binanceApi from "./binanceApi";
 import { API_CONFIG } from "./api/config";
 import { toast } from "@/components/ui/sonner";
-import * as fs from "fs";
 
 // Constants for order creation
 const PRICE_ADJUSTMENT_PERCENTAGE = 10; // 10% lower for buy orders, 10% higher for sell orders
-const ORDER_STORAGE_PATH = "orders.json";
+const ORDER_STORAGE_KEY = "automated_orders";
 
 interface StoredOrder {
   id: string;
@@ -27,20 +26,15 @@ class AutomatedOrderService {
   }
   
   /**
-   * Load previously stored orders from the JSON file
+   * Load previously stored orders from localStorage
    */
   private loadStoredOrders(): void {
     try {
-      // In mock mode, initialize with empty array
-      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
+      const savedOrders = localStorage.getItem(ORDER_STORAGE_KEY);
+      if (savedOrders) {
+        this.storedOrders = JSON.parse(savedOrders);
+      } else {
         this.storedOrders = [];
-        return;
-      }
-      
-      // Otherwise try to read from file
-      if (fs.existsSync(ORDER_STORAGE_PATH)) {
-        const data = fs.readFileSync(ORDER_STORAGE_PATH, "utf8");
-        this.storedOrders = JSON.parse(data);
       }
     } catch (error) {
       console.error("Failed to load stored orders:", error);
@@ -49,21 +43,14 @@ class AutomatedOrderService {
   }
   
   /**
-   * Save orders to the JSON file
+   * Save orders to localStorage
    */
   private saveStoredOrders(): void {
     try {
-      // In mock mode, just log
-      if (API_CONFIG.isDevMode || API_CONFIG.useMockData) {
-        console.log("Would save orders to file:", this.storedOrders);
-        return;
-      }
-      
-      // Otherwise write to file
-      fs.writeFileSync(ORDER_STORAGE_PATH, JSON.stringify(this.storedOrders, null, 2));
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(this.storedOrders));
     } catch (error) {
       console.error("Failed to save stored orders:", error);
-      toast.error("Failed to save order information to file");
+      toast.error("Failed to save order information");
     }
   }
   

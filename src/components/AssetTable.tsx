@@ -1,11 +1,11 @@
 
 import { useTrading } from '@/context/TradingContext';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { API_CONFIG } from '@/services/api/config';
 
-// Supported pairs
-const SUPPORTED_PAIRS = ['ADAEUR', 'BTCEUR'];
+// Get the supported assets from API_CONFIG
+const SUPPORTED_ASSETS = API_CONFIG.supportedPairs.map(pair => pair.replace('EUR', ''));
 
 const AssetTable = () => {
   const { accountInfo, assetPrices, selectAsset, selectedAsset } = useTrading();
@@ -14,7 +14,7 @@ const AssetTable = () => {
 
   // Filter out assets that are not in our supported list
   const supportedAssets = accountInfo.balances.filter(
-    asset => asset.asset === 'ADA' || asset.asset === 'BTC'
+    asset => SUPPORTED_ASSETS.includes(asset.asset)
   );
   
   return (
